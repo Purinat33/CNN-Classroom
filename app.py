@@ -8,6 +8,14 @@ from keras.datasets import mnist
 import urllib.request
 import keras.utils
 import random
+import pandas as pd
+from io import BytesIO
+
+
+# Return a random label between 0 - 9
+def getRandomLabel(X_test):
+    index = random.randint(0, len(X_test) - 1)
+    return X_test[index]
 
 
 # We load data this way to `cache` the data
@@ -33,7 +41,7 @@ def load_np_history(url):
     data = response.read()
 
     # Convert the fetched data to a NumPy array
-    np_array = np.frombuffer(data, dtype=np.float32)  # Adjust dtype if necessary
+    np_array = np.load(BytesIO(data), allow_pickle=True)
 
     return np_array
 
@@ -122,8 +130,80 @@ st.write(
 )
 
 st.divider()
-st.header("Try It Yourself!")
+st.header("Demonstration")
+index = random.randint(0, len(X_test) - 1)  # Index 0 to 9999
 st.write(
-    "Enough talking, you can try selecting one of the test data and see how the model performed."
+    f"With X_test length of 10000 data we pick image at location {index + 1}: "
+)  # Index 0 is 1 etc. as to not confused people
+fig_demo, ax_demo = plt.subplots()
+fig_demo.suptitle(f"Label: {Y_test[index]}")
+ax_demo.imshow(X_test[index], cmap="gray")
+st.pyplot(fig_demo)
+st.write(
+    """
+         We will call the above image **handwritten_digit** where handwritten_digit is a 28x28 array of pixels values (0 - 255).
+         """
 )
-st.write("This is not yet the section where you can upload your own drawing :<")
+
+# Loading the model
+model_url = "https://github.com/Purinat33/CNN-Classroom/raw/master/mnist_cnn.h5"
+model_name = "mnist_cnn.h5"
+model = load_model(model_url, model_name)
+
+
+st.subheader("Predicting")
+st.write("Passing the image to the model is simply done using: ")
+st.code("predictions = model.predict(handwritten_digit)", language="python")
+st.write(
+    "Which will give out 10 values, each of which representing the *probability* of a digit the handwritten_digit array represents."
+)
+st.write(
+    "But firstly we need to reshape the input image into a shape the model expects.\n"
+)
+st.write(f"Current Input Shape: {X_test[index].shape}")
+st.write("\nExpected Shape: (1, 28, 28, 1)")
+
+st.subheader("Getting The Probabilities of each labels")
+
+demo_input = X_test[index].reshape((1, 28, 28, 1))
+demo_predictions = model.predict(demo_input)
+predict_result = []
+labels = [i for i, pred in enumerate(demo_predictions[0])]
+for i, pred in enumerate(demo_predictions[0]):
+    # st.write(f"Label {i}: {pred:.4f}") # Show probability of prediction being belong to what class (0-9)
+    predict_result.append(round(pred * 100, 3))
+
+results = pd.DataFrame(predict_result, index=labels, columns=["Percentage"])
+results.index.name = "Label"
+st.write(results)
+st.write(
+    f"According to the probabilities table above, we can see that the model belives the handwritten image above most likely represents the digit {results['Percentage'].idxmax()} with {results['Percentage'].max()}% probability."
+)
+
+# Get all the minimum values
+# since idxmax() and idxmin() only returns the first occurence, we instead use a filter
+min_percentage = results["Percentage"].min()
+min_percentage_indexes = results[results["Percentage"] == min_percentage].index
+st.write(
+    f"Conversely, the model believes that the digit the image **least likely** to represent is/are {list(min_percentage_indexes.values)} with {results['Percentage'].min()}% of it/them being the represented digit."
+)
+
+st.divider()
+st.header("Model Performance Evaluation")
+st.write(
+    """
+    Information taken from:
+[fiddler.ai](https://www.fiddler.ai/model-evaluation-in-model-monitoring/what-is-model-performance-evaluation#:~:text=In%20machine%20learning%2C%20model%20performance,metrics%20like%20classification%20and%20regression)
+         """
+)
+st.write(
+    """
+    ### Loss:
+    Loss is the penalty for a bad prediction. That is, loss is a number indicating how bad the model's prediction was on a single example. If the model's prediction is perfect, the loss is zero; otherwise, the loss is greater. [Source](https://developers.google.com/machine-learning/crash-course/descending-into-ml/training-and-loss#:~:text=Loss%20is%20the%20penalty%20for,otherwise%2C%20the%20loss%20is%20greater)
+"""
+)
+
+# Plot loss graph
+numpy_url = (
+    "https://github.com/Purinat33/CNN-Classroom/raw/master/mnist_cnn_history.npy"
+)
