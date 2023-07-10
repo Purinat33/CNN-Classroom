@@ -2,20 +2,13 @@
 from PIL import Image
 import streamlit as st
 import matplotlib.pyplot as plt
-import numpy as np
 from keras.models import load_model
 from keras.datasets import mnist
 import urllib.request
 import keras.utils
 import random
 import pandas as pd
-from io import BytesIO
-
-
-# Return a random label between 0 - 9
-def getRandomLabel(X_test):
-    index = random.randint(0, len(X_test) - 1)
-    return X_test[index]
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
 # We load data this way to `cache` the data
@@ -33,17 +26,11 @@ def load_img(url, filename):
     return image
 
 
-# Loading the numpy history data
 @st.cache_data
-def load_np_history(url):
-    # Fetch the file from the GitHub repository
-    response = urllib.request.urlopen(url)
-    data = response.read()
-
-    # Convert the fetched data to a NumPy array
-    np_array = np.load(BytesIO(data), allow_pickle=True)
-
-    return np_array
+def load_history_csv(url, filename):
+    urllib.request.urlretrieve(url, filename)
+    df = pd.read_csv(filename)
+    return df
 
 
 # Loading the model
@@ -52,6 +39,70 @@ def load_model(url, filename):
     file_path = keras.utils.get_file(filename, origin=url)
     model = keras.models.load_model(file_path)
     return model
+
+
+@st.cache_data
+def plot_history(history):
+    st.write(
+        """
+        ##### Loss History:
+             """
+    )
+
+    fig_loss, ax_loss = plt.subplots()
+    fig_loss.suptitle("Train and Test Loss")
+    ax_loss.plot(history["loss"], label="Train")
+    ax_loss.plot(history["val_loss"], label="Test")
+    fig_loss.supxlabel("Epoch")
+    fig_loss.supylabel("Loss")
+    fig_loss.legend()
+    ax_loss.grid()
+    st.pyplot(fig_loss)
+
+    st.write(
+        """
+             ### Accuracy:
+             Accuracy is the fraction of predictions our model got right. [Source](https://developers.google.com/machine-learning/crash-course/classification/accuracy)
+
+             """
+    )
+    st.write(
+        """
+        ##### Accuracy History:
+             """
+    )
+    # Accuracy chart
+    fig_acc, ax_acc = plt.subplots()
+    fig_acc.suptitle("Train and Test Accuracy")
+    ax_acc.plot(history["accuracy"] * 100, label="Train")
+    ax_acc.plot(history["val_accuracy"] * 100, label="Test")
+    fig_acc.supxlabel("Epoch")
+    fig_acc.supylabel("Accuracy (%)")
+    fig_acc.legend()
+    ax_acc.grid()
+    st.pyplot(fig_acc)
+
+
+@st.cache_data
+def plot_confusion_matrix(y_true, y_pred):
+    fig_con, ax = plt.subplots()
+    cm = confusion_matrix(y_true, y_pred)
+    dist = ConfusionMatrixDisplay(
+        confusion_matrix=cm, display_labels=[i for i in range(10)]
+    )
+
+    fig_con.suptitle("Confusion Matrix")
+    dist.plot(ax=ax)
+    st.pyplot(fig_con)
+
+
+@st.cache_data
+def getYpredict(
+    _model, X_test
+):  # We didn't change any of the Y depending on the users so...
+    y_pred = _model.predict(X_test)
+    y_pred = y_pred.argmax(axis=1)
+    return y_pred
 
 
 st.title("Convolutional Neural Network (CNN)")
@@ -204,6 +255,46 @@ st.write(
 )
 
 # Plot loss graph
-numpy_url = (
-    "https://github.com/Purinat33/CNN-Classroom/raw/master/mnist_cnn_history.npy"
+history = load_history_csv(
+    "https://github.com/Purinat33/CNN-Classroom/raw/master/history.csv", "history.csv"
 )
+
+history = history.rename(columns={"Unnamed: 0": "epoch"})
+
+plot_history(history)
+
+st.write(
+    "[History Plotting Guide](https://machinelearningmastery.com/display-deep-learning-model-training-history-in-keras/)"
+)
+
+
+st.write(
+    """
+         #### History Dataframe:
+         """
+)
+
+history = history.rename(
+    columns={
+        "loss": "train_loss",
+        "accuracy": "train_accuracy",
+        "val_loss": "test_loss",
+        "val_accuracy": "test_accuracy",
+    }
+)
+st.dataframe(history, hide_index=True)
+
+# Confusion Matrix
+st.write(
+    """
+        ### Confusion Matrix:
+        A confusion matrix presents a table layout of the different outcomes of the prediction and results of a classification problem and helps visualize its outcomes.
+
+        It plots a table of all the predicted and actual values of a classifier. [Source](https://www.analyticsvidhya.com/blog/2020/04/confusion-matrix-machine-learning/)
+         """
+)
+
+y_true = Y_test
+X_test_re = X_test.reshape((10000, 28, 28, 1))
+y_pred = getYpredict(model, X_test_re)
+plot_confusion_matrix(y_true, y_pred)
