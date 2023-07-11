@@ -214,6 +214,19 @@ st.write(
 st.write(f"Current Input Shape: {X_test[index].shape}")
 st.write("\nExpected Shape: (1, 28, 28, 1)")
 
+# Visualize what happened at each step
+st.subheader("Filter Visualization and Feature Maps")
+st.write("Look at what the model extracted from and will detect in future images.")
+st.write(
+    """
+         To generate feature maps we need to understand ```model.layers``` API.
+         """
+)
+
+# FOR DEBUGGING ONLY
+st.write([layer.name for layer in model.layers])
+
+
 st.subheader("Getting The Probabilities of each labels")
 
 demo_input = X_test[index].reshape((1, 28, 28, 1))
