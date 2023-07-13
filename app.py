@@ -9,6 +9,8 @@ import keras.utils
 import random
 import pandas as pd
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import tensorflow as tf
+import numpy as np
 
 
 # We load data this way to `cache` the data
@@ -224,7 +226,8 @@ st.write(
 )
 
 # FOR DEBUGGING ONLY
-st.write([layer.name for layer in model.layers])
+# st.write([layer.name for layer in model.layers])
+# st.write([layer.output for layer in model.layers])
 
 
 st.subheader("Getting The Probabilities of each labels")
@@ -311,3 +314,52 @@ y_true = Y_test
 X_test_re = X_test.reshape((10000, 28, 28, 1))
 y_pred = getYpredict(model, X_test_re)
 plot_confusion_matrix(y_true, y_pred)
+
+# feature_maps(model, X_test, index)
+st.write("--------------------------")
+st.write("layer.name")
+st.write([layer.name for layer in model.layers])
+
+st.write("--------------------------")
+st.write("layer.input")
+st.write([layer.input for layer in model.layers])
+
+st.write("--------------------------")
+st.write("layer.output")
+st.write([layer.output for layer in model.layers])
+
+
+st.write("--------------------------")
+layer_outputs = [layer.output for layer in model.layers]
+
+
+input_image = X_test[index].reshape(-1, 28, 28, 1)
+activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+activations = activation_model.predict(input_image)
+
+layer_names = [
+    "conv2d",
+    "max_pooling2d",
+    "conv2d_1",
+    "max_pooling2d_1",
+    "flatten",
+    "dense",
+    "dense_1",
+    "dense_2",
+    "dense_3",
+]
+
+for layer_name, activation in zip(layer_names, activations):
+    if len(activation.shape) == 4:  # Check if the shape is 4D (i.e., feature maps)
+        n_features = activation.shape[-1]  # Number of feature maps in the layer
+        size = activation.shape[1]  # Size of each feature map
+        n_cols = int(np.sqrt(n_features))  # Number of columns for subplots
+        n_rows = int(np.ceil(n_features / n_cols))  # Number of rows for subplots
+
+        plt.figure(figsize=(n_cols, n_rows))
+        for i in range(n_features):
+            plt.subplot(n_rows, n_cols, i + 1)
+            plt.axis("off")
+            plt.imshow(activation[0, :, :, i], cmap="gray")  # Plot the ith feature map
+        plt.suptitle(layer_name)
+        plt.show()
