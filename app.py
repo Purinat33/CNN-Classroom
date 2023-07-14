@@ -217,14 +217,52 @@ st.write(f"Current Input Shape: {X_test[index].shape}")
 st.write("\nExpected Shape: (1, 28, 28, 1)")
 
 # Visualize what happened at each step
-st.subheader("Filter Visualization and Feature Maps")
-st.write("Look at what the model extracted from and will detect in future images.")
-st.write(
-    """
-         To generate feature maps we need to understand ```model.layers``` API.
-         """
-)
+# st.subheader("Filter Visualization and Feature Maps")
+# st.write("Look at what the model extracted from and will detect in future images.")
+# st.write(
+#     """
+#          To generate feature maps we need to understand ```model.layers``` API.
+#          """
+# )
 
+# layer_outputs = [layer.output for layer in model.layers]
+# input_image = X_test[index].reshape(-1, 28, 28, 1)
+# activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+# activations = activation_model.predict(input_image)
+
+# layer_names = [
+#     "conv2d",
+#     "max_pooling2d",
+#     "conv2d_1",
+#     "max_pooling2d_1",
+#     "flatten",
+#     "dense",
+#     "dense_1",
+#     "dense_2",
+#     "dense_3",
+# ]
+
+# for layer_name, activation in zip(layer_names, activations):
+#     if len(activation.shape) == 4:  # Check if the shape is 4D (i.e., feature maps)
+#         n_features = activation.shape[-1]  # Number of feature maps in the layer
+#         size = activation.shape[1]  # Size of each feature map
+#         n_cols = int(np.sqrt(n_features))  # Number of columns for subplots
+#         n_rows = int(np.ceil(n_features / n_cols))  # Number of rows for subplots
+
+#         fig_feat = plt.figure(figsize=(n_cols, n_rows))
+#         for i in range(n_features):
+#             ax = fig_feat.add_subplot(n_rows, n_cols, i + 1)
+#             ax.axis("off")
+#             ax.imshow(activation[0, :, :, i], cmap="gray")  # Plot the ith feature map
+#         fig_feat.suptitle(layer_name)
+
+#         # Convert the Matplotlib figure to an image and display it in Streamlit
+#         st.pyplot(fig_feat)
+#         st.write(f"Layer: {layer_name}")
+#         st.write(f"Number of Feature Maps: {n_features}")
+#         st.write(f"Size of Each Feature Map: {size}x{size}")
+#         st.write(f"Shape of Activation Output: {activation.shape}")
+#         st.write("--------------------------")
 # FOR DEBUGGING ONLY
 # st.write([layer.name for layer in model.layers])
 # st.write([layer.output for layer in model.layers])
@@ -256,6 +294,59 @@ st.write(
 )
 
 st.divider()
+st.header("Filter Visualization and Feature Maps")
+st.write("Look at what the model extracted from and will detect in future images.")
+# st.write(
+#     """
+#          To generate feature maps we need to understand ```model.layers``` API.
+#          """
+# )
+st.write("From the above example:")
+st.pyplot(fig_demo)
+
+layer_outputs = [layer.output for layer in model.layers]
+input_image = X_test[index].reshape(-1, 28, 28, 1)
+activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+activations = activation_model.predict(input_image)
+
+layer_names = [
+    "conv2d",
+    "max_pooling2d",
+    "conv2d_1",
+    "max_pooling2d_1",
+    "flatten",
+    "dense",
+    "dense_1",
+    "dense_2",
+    "dense_3",
+]
+
+for layer_name, activation in zip(layer_names, activations):
+    if len(activation.shape) == 4:  # Check if the shape is 4D (i.e., feature maps)
+        n_features = activation.shape[-1]  # Number of feature maps in the layer
+        size = activation.shape[1]  # Size of each feature map
+        n_cols = int(np.sqrt(n_features))  # Number of columns for subplots
+        n_rows = int(np.ceil(n_features / n_cols))  # Number of rows for subplots
+
+        fig_feat = plt.figure(figsize=(n_cols, n_rows))
+        for i in range(n_features):
+            ax = fig_feat.add_subplot(n_rows, n_cols, i + 1)
+            ax.axis("off")
+            ax.imshow(activation[0, :, :, i], cmap="gray")  # Plot the ith feature map
+        fig_feat.suptitle(layer_name)
+
+        # Convert the Matplotlib figure to an image and display it in Streamlit
+        st.pyplot(fig_feat)
+        st.write(f"Layer: {layer_name}")
+        st.write(f"Number of Feature Maps: {n_features}")
+        st.write(f"Size of Each Feature Map: {size}x{size}")
+        st.write(f"Shape of Activation Output: {activation.shape}")
+        st.write("--------------------------")
+# FOR DEBUGGING ONLY
+# st.write([layer.name for layer in model.layers])
+# st.write([layer.output for layer in model.layers])
+
+
 st.header("Model Performance Evaluation")
 st.write(
     """
@@ -315,51 +406,59 @@ X_test_re = X_test.reshape((10000, 28, 28, 1))
 y_pred = getYpredict(model, X_test_re)
 plot_confusion_matrix(y_true, y_pred)
 
+st.write("--------------------------")
 # feature_maps(model, X_test, index)
-st.write("--------------------------")
-st.write("layer.name")
-st.write([layer.name for layer in model.layers])
+# st.write("--------------------------")
+# st.write("layer.name")
+# st.write([layer.name for layer in model.layers])
 
-st.write("--------------------------")
-st.write("layer.input")
-st.write([layer.input for layer in model.layers])
+# st.write("--------------------------")
+# st.write("layer.input")
+# st.write([layer.input for layer in model.layers])
 
-st.write("--------------------------")
-st.write("layer.output")
-st.write([layer.output for layer in model.layers])
-
-
-st.write("--------------------------")
-layer_outputs = [layer.output for layer in model.layers]
+# st.write("--------------------------")
+# st.write("layer.output")
+# st.write([layer.output for layer in model.layers])
 
 
-input_image = X_test[index].reshape(-1, 28, 28, 1)
-activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
-activations = activation_model.predict(input_image)
+# st.write("--------------------------")
 
-layer_names = [
-    "conv2d",
-    "max_pooling2d",
-    "conv2d_1",
-    "max_pooling2d_1",
-    "flatten",
-    "dense",
-    "dense_1",
-    "dense_2",
-    "dense_3",
-]
 
-for layer_name, activation in zip(layer_names, activations):
-    if len(activation.shape) == 4:  # Check if the shape is 4D (i.e., feature maps)
-        n_features = activation.shape[-1]  # Number of feature maps in the layer
-        size = activation.shape[1]  # Size of each feature map
-        n_cols = int(np.sqrt(n_features))  # Number of columns for subplots
-        n_rows = int(np.ceil(n_features / n_cols))  # Number of rows for subplots
+# layer_outputs = [layer.output for layer in model.layers]
+# input_image = X_test[index].reshape(-1, 28, 28, 1)
+# activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+# activations = activation_model.predict(input_image)
 
-        plt.figure(figsize=(n_cols, n_rows))
-        for i in range(n_features):
-            plt.subplot(n_rows, n_cols, i + 1)
-            plt.axis("off")
-            plt.imshow(activation[0, :, :, i], cmap="gray")  # Plot the ith feature map
-        plt.suptitle(layer_name)
-        plt.show()
+# layer_names = [
+#     "conv2d",
+#     "max_pooling2d",
+#     "conv2d_1",
+#     "max_pooling2d_1",
+#     "flatten",
+#     "dense",
+#     "dense_1",
+#     "dense_2",
+#     "dense_3",
+# ]
+
+# for layer_name, activation in zip(layer_names, activations):
+#     if len(activation.shape) == 4:  # Check if the shape is 4D (i.e., feature maps)
+#         n_features = activation.shape[-1]  # Number of feature maps in the layer
+#         size = activation.shape[1]  # Size of each feature map
+#         n_cols = int(np.sqrt(n_features))  # Number of columns for subplots
+#         n_rows = int(np.ceil(n_features / n_cols))  # Number of rows for subplots
+
+#         fig_feat = plt.figure(figsize=(n_cols, n_rows))
+#         for i in range(n_features):
+#             ax = fig_feat.add_subplot(n_rows, n_cols, i + 1)
+#             ax.axis("off")
+#             ax.imshow(activation[0, :, :, i], cmap="gray")  # Plot the ith feature map
+#         fig_feat.suptitle(layer_name)
+
+#         # Convert the Matplotlib figure to an image and display it in Streamlit
+#         st.pyplot(fig_feat)
+#         st.write(f"Layer: {layer_name}")
+#         st.write(f"Number of Feature Maps: {n_features}")
+#         st.write(f"Size of Each Feature Map: {size}x{size}")
+#         st.write(f"Shape of Activation Output: {activation.shape}")
+#         st.write("--------------------------")
