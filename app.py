@@ -304,6 +304,79 @@ st.write("Look at what the model extracted from and will detect in future images
 st.write("From the above example:")
 st.pyplot(fig_demo)
 
+# layer_outputs = [layer.output for layer in model.layers]
+# input_image = X_test[index].reshape(-1, 28, 28, 1)
+# activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+# activations = activation_model.predict(input_image)
+
+# layer_names = [
+#     "conv2d",
+#     "max_pooling2d",
+#     "conv2d_1",
+#     "max_pooling2d_1",
+#     "flatten",
+#     "dense",
+#     "dense_1",
+#     "dense_2",
+#     "dense_3",
+# ]
+
+# for layer_name, activation in zip(layer_names, activations):
+#     if len(activation.shape) == 4:  # Check if the shape is 4D (i.e., feature maps)
+#         n_features = activation.shape[-1]  # Number of feature maps in the layer
+#         size = activation.shape[1]  # Size of each feature map
+#         n_cols = int(np.sqrt(n_features))  # Number of columns for subplots
+#         n_rows = int(np.ceil(n_features / n_cols))  # Number of rows for subplots
+
+#         fig_feat = plt.figure(figsize=(n_cols, n_rows))
+#         for i in range(n_features):
+#             ax = fig_feat.add_subplot(n_rows, n_cols, i + 1)
+#             ax.axis("off")
+#             ax.imshow(activation[0, :, :, i], cmap="gray")  # Plot the ith feature map
+#         fig_feat.suptitle(layer_name)
+
+#         # Convert the Matplotlib figure to an image and display it in Streamlit
+#         st.pyplot(fig_feat)
+#         st.write(f"Layer: {layer_name}")
+#         st.write(f"Number of Feature Maps: {n_features}")
+#         st.write(f"Size of Each Feature Map: {size}x{size}")
+#         st.write(f"Shape of Activation Output: {activation.shape}")
+#         st.write("--------------------------")
+# # FOR DEBUGGING ONLY
+# # st.write([layer.name for layer in model.layers])
+# # st.write([layer.output for layer in model.layers])
+# st.subheader("Filters")
+# # Get the filters of a specific convolutional layer
+# layer_names = ["conv2d", "conv2d_1"]
+
+# for layer_name in layer_names:
+#     for layer in model.layers:
+#         if layer.name == layer_name:
+#             filters = layer.get_weights()[0]
+
+#             # Normalize the filters to the range [0, 1] for visualization
+#             filters_normalized = (filters - np.min(filters)) / (
+#                 np.max(filters) - np.min(filters)
+#             )
+
+#             # Create a figure to plot the filters
+#             n_filters = filters.shape[3]
+#             n_cols = 8  # Number of columns for subplots
+#             n_rows = int(np.ceil(n_filters / n_cols))  # Number of rows for subplots
+#             fig_filters = plt.figure(figsize=(n_cols, n_rows))
+
+#             # Plot each filter
+#             for i in range(n_filters):
+#                 ax = fig_filters.add_subplot(n_rows, n_cols, i + 1)
+#                 ax.axis("off")
+#                 ax.imshow(filters[:, :, 0, i], cmap="gray")  # Plot the ith filter
+
+#             fig_filters.suptitle(f"{layer_name} Filters")
+
+#             # Convert the Matplotlib figure to an image and display it in Streamlit
+#             st.pyplot(fig_filters)
+
+# st.write("--------------------------")
 layer_outputs = [layer.output for layer in model.layers]
 input_image = X_test[index].reshape(-1, 28, 28, 1)
 activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
@@ -342,10 +415,49 @@ for layer_name, activation in zip(layer_names, activations):
         st.write(f"Size of Each Feature Map: {size}x{size}")
         st.write(f"Shape of Activation Output: {activation.shape}")
         st.write("--------------------------")
-# FOR DEBUGGING ONLY
-# st.write([layer.name for layer in model.layers])
-# st.write([layer.output for layer in model.layers])
 
+st.subheader("Filters (Convolutional Layers only)")
+# Get the filters of a specific convolutional layer
+layer_names = ["conv2d", "conv2d_1"]
+
+for layer_name in layer_names:
+    for layer in model.layers:
+        if layer.name == layer_name:
+            filters = layer.get_weights()[0]
+
+            # Normalize the filters to the range [0, 1] for visualization
+            filters_normalized = (filters - np.min(filters)) / (
+                np.max(filters) - np.min(filters)
+            )
+
+            # Create a figure to plot the filters and feature maps
+            n_filters = filters.shape[3]
+            n_cols = (
+                n_filters + 1
+            )  # Number of columns for subplots (filters + feature maps)
+            n_rows = 2  # Number of rows for subplots (filters and feature maps)
+            fig = plt.figure(figsize=(n_cols, n_rows))
+
+            # Plot filters
+            for i in range(n_filters):
+                ax = fig.add_subplot(2, n_cols, i + 1)
+                ax.axis("off")
+                ax.imshow(filters[:, :, 0, i], cmap="gray")
+                ax.set_title(f"Filter {i+1}")
+
+            # Plot feature maps
+            activations = activation_model.predict(input_image)
+            feature_maps = activations[layer_names.index(layer_name)]
+            for i in range(n_filters):
+                ax = fig.add_subplot(2, n_cols, n_cols + i + 1)
+                ax.axis("off")
+                ax.imshow(feature_maps[0, :, :, i], cmap="gray")
+                # ax.set_title(f"Feature Map {i+1}")
+
+            fig.suptitle(layer_name)
+
+            # Convert the Matplotlib figure to an image and display it in Streamlit
+            st.pyplot(fig)
 
 st.header("Model Performance Evaluation")
 st.write(
