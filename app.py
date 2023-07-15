@@ -109,7 +109,7 @@ def getYpredict(
 
 st.title("Convolutional Neural Network (CNN)")
 st.write(
-    "This application will allow users to learn what a CNN is, while having the ability to use their own input as well!"
+    "This application demonstrates the usage of a Convolutional Neural Network to classify handwritten digits"
 )
 
 st.divider()
